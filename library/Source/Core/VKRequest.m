@@ -174,6 +174,9 @@ void vksdk_dispatch_on_main_queue_now(void(^block)(void)) {
     newRequest.methodParameters = parameters;
     newRequest.httpMethod = @"POST";
     newRequest.modelClass = modelClass;
+
+    NSLog(@"VKDEBUG: %@", newRequest.debugDescription);
+
     return newRequest;
 }
 
@@ -183,6 +186,9 @@ void vksdk_dispatch_on_main_queue_now(void(^block)(void)) {
     newRequest.httpMethod = @"POST";
     newRequest.uploadUrl = url;
     newRequest.photoObjects = photoObjects;
+
+    NSLog(@"VKDEBUG: %@", newRequest.debugDescription);
+
     return newRequest;
 }
 
@@ -199,6 +205,7 @@ void vksdk_dispatch_on_main_queue_now(void(^block)(void)) {
 
         _waitMultiplier = 1.f;
     }
+    NSLog(@"VKDEBUG: %@", self.debugDescription);
     return self;
 }
 
@@ -297,41 +304,44 @@ void vksdk_dispatch_on_main_queue_now(void(^block)(void)) {
     }
 
     [operation setCompletionBlockWithSuccess:^(VKHTTPOperation *completedOperation, id JSON) {
-        [_requestTiming loaded];
-        if (_executionOperation.isCancelled) {
-            return;
-        }
-        if ([JSON objectForKey:@"error"]) {
-            VKError *error = [VKError errorWithJson:[JSON objectForKey:@"error"]];
-            if ([self processCommonError:error]) {
-                return;
-            }
-            [self provideError:[NSError errorWithVkError:error]];
-            return;
-        }
-        [self provideResponse:JSON responseString:completedOperation.responseString];
-    }                                failure:^(VKHTTPOperation *completedOperation, NSError *error) {
-        [_requestTiming loaded];
-        if (_executionOperation.isCancelled) {
-            return;
-        }
-        if (completedOperation.response.statusCode == 200) {
-            [self provideResponse:completedOperation.responseJson responseString:completedOperation.responseString];
-            return;
-        }
-        if (self.attempts == 0 || ++self.attemptsUsed < self.attempts) {
-            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t) (300 * NSEC_PER_MSEC)), self.responseQueue,
-                    ^(void) {
-                        [self executeWithResultBlock:_completeBlock errorBlock:_errorBlock];
-                    });
-            return;
-        }
+                                                [_requestTiming loaded];
+                                                if (_executionOperation.isCancelled) {
+                                                    return;
+                                                }
+                                                if ([JSON objectForKey:@"error"]) {
+                                                    VKError *error = [VKError errorWithJson:[JSON objectForKey:@"error"]];
+                                                    NSLog(@"VKDEBUG: received error %@\n%@\nRequest was: %@", error.debugDescription, error.json, error.request);
+                                                    if ([self processCommonError:error]) {
+                                                        return;
+                                                    }
+                                                    [self provideError:[NSError errorWithVkError:error]];
+                                                    return;
+                                                }
+                                                [self provideResponse:JSON responseString:completedOperation.responseString];
+                                            }
+                                     failure:^(VKHTTPOperation *completedOperation, NSError *error) {
+                                                [_requestTiming loaded];
+                                                if (_executionOperation.isCancelled) {
+                                                    return;
+                                                }
+                                                if (completedOperation.response.statusCode == 200) {
+                                                    [self provideResponse:completedOperation.responseJson responseString:completedOperation.responseString];
+                                                    return;
+                                                }
+                                                if (self.attempts == 0 || ++self.attemptsUsed < self.attempts) {
+                                                    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t) (300 * NSEC_PER_MSEC)), self.responseQueue,
+                                                            ^(void) {
+                                                                [self executeWithResultBlock:_completeBlock errorBlock:_errorBlock];
+                                                            });
+                                                    return;
+                                                }
 
-        VKError *vkErr = [VKError errorWithCode:completedOperation.response ? completedOperation.response.statusCode : error.code];
-        [self provideError:[error copyWithVkError:vkErr]];
-        [_requestTiming finished];
+                                                VKError *vkErr = [VKError errorWithCode:completedOperation.response ? completedOperation.response.statusCode : error.code];
+                                                [self provideError:[error copyWithVkError:vkErr]];
+                                                [_requestTiming finished];
 
-    }];
+                                            }];
+
     operation.successCallbackQueue = operation.failureCallbackQueue = [VKRequest processingQueue];
     [self setupProgress:operation];
     return operation;
