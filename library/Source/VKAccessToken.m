@@ -231,7 +231,7 @@ static NSString *const PERMISSIONS = @"permissions";
     SecItemDelete((__bridge CFDictionaryRef) keychainQuery);
     keychainQuery[(__bridge id) kSecValueData] = [NSKeyedArchiver archivedDataWithRootObject:token];
     OSStatus status = SecItemAdd((__bridge CFDictionaryRef) keychainQuery, NULL);
-    NSAssert(status == errSecSuccess, @"Unable to store VKAccessToken in keychain. OSStatus: %i. Error Description: https://www.osstatus.com/search/results?platform=all&framework=all&search=%i or https://developer.apple.com/reference/security/1658642-keychain_services", status, status);
+    NSAssert(status == errSecSuccess, @"Unable to store VKAccessToken in keychain. OSStatus: %i. Error Description: https://www.osstatus.com/search/results?platform=all&framework=all&search=%i or https://developer.apple.com/reference/security/1658642-keychain_services", (SInt32)status, (SInt32)status);
 }
 
 + (VKAccessToken *)load:(NSString *)service {

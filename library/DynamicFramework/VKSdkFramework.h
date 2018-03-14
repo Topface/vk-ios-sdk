@@ -59,3 +59,4 @@ FOUNDATION_EXPORT const unsigned char VKSdkFrameworkVersionString[];
 #import <VKSdkFramework/VKRequestsScheduler.h>
 #import <VKSdkFramework/VKSharedTransitioningObject.h>
 #import <VKSdkFramework/NSString+MD5.h>
+
